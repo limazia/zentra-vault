@@ -1,0 +1,106 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: scrapo-postgres
+    restart: unless-stopped
+    ports:
+      - '5432:5432'
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - scrapo-network
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER} -d ${DB_NAME}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: scrapo-redis
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - scrapo-network
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  internal:
+    image: caminotec/scrapo-backend:1.23.0
+    container_name: scrapo-internal
+    restart: unless-stopped
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - scrapo-network
+      - web
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.internal.rule=Host(`${APP_HOST}`)'
+      - 'traefik.http.routers.internal.entrypoints=websecure'
+      - 'traefik.http.routers.internal.tls=true'
+      - 'traefik.http.routers.internal.tls.certresolver=letsencrypt'
+      - 'traefik.http.services.internal.loadbalancer.server.port=3000'
+
+  public:
+    image: caminotec/scrapo-public-backend:1.0.0
+    container_name: scrapo-public
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      PORT: 4000
+      APP_URL: 'https://${PUBLIC_APP_HOST}'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - scrapo-network
+      - web
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.public.rule=Host(`${PUBLIC_APP_HOST}`)'
+      - 'traefik.http.routers.public.entrypoints=websecure'
+      - 'traefik.http.routers.public.tls=true'
+      - 'traefik.http.routers.public.tls.certresolver=letsencrypt'
+      - 'traefik.http.services.public.loadbalancer.server.port=4000'
+      # Proxy: APP_HOST + /public/* -> public (mantém URL internal em prod)
+      - 'traefik.http.middlewares.strip-public-prefix.stripprefix.prefixes=/public'
+      - 'traefik.http.routers.internal-public-proxy.rule=Host(`${APP_HOST}`) && PathPrefix(`/public/`)'
+      - 'traefik.http.routers.internal-public-proxy.entrypoints=websecure'
+      - 'traefik.http.routers.internal-public-proxy.tls=true'
+      - 'traefik.http.routers.internal-public-proxy.tls.certresolver=letsencrypt'
+      - 'traefik.http.routers.internal-public-proxy.service=public'
+      - 'traefik.http.routers.internal-public-proxy.priority=100'
+      - 'traefik.http.routers.internal-public-proxy.middlewares=strip-public-prefix'
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  scrapo-network:
+    driver: bridge
+  web:
+    external: true
