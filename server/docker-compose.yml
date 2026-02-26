@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: avantpro-vault-db
+    ports:
+      - "5434:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: avantpro_vault
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:

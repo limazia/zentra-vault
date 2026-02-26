@@ -1,0 +1,54 @@
+---
+description: Monolito modular — isolamento entre módulos e regras de dependência
+alwaysApply: true
+---
+
+# Monolito Modular
+
+O backend é um monolito modular: um único deploy, mas com módulos isolados e fronteiras bem definidas.
+
+## Estrutura Geral
+
+```
+src/
+  core/              # composição da aplicação (AppModule)
+  modules/           # módulos de negócio isolados
+    <modulo>/        # cada módulo segue arquitetura hexagonal interna
+  shared/            # código transversal reutilizável entre módulos
+    domain/
+    infrastructure/
+```
+
+## Regras de Dependência entre Módulos
+
+- **Módulo não importa internals de outro módulo**. Nunca importe diretamente entities, use cases, ports ou adapters de outro módulo.
+- **Comunicação entre módulos** acontece apenas via:
+  - NestJS module `exports`/`imports` (providers exportados)
+  - Tipos/interfaces compartilhados em `shared/`
+- **`shared/` nunca depende de `modules/`**. O fluxo é sempre `modules → shared`, nunca o inverso.
+- **`core/` importa apenas modules e shared** para compor o `AppModule`.
+
+```
+✅ modules/secrets → shared/domain
+✅ modules/secrets → shared/infrastructure
+✅ modules/secrets → modules/auth (via NestJS module import)
+❌ shared/ → modules/auth
+❌ modules/secrets → modules/auth/application/use-cases/...
+```
+
+## API Pública de um Módulo
+
+Cada módulo expõe sua API pública apenas pelo `NestJS @Module`:
+
+- **`exports`**: providers que outros módulos podem injetar (guards, ports, services)
+- **`controllers`**: endpoints HTTP do módulo
+
+Tudo que não está em `exports` é interno e inacessível de fora.
+
+## Shared
+
+`shared/` contém apenas código **genérico e transversal**:
+
+- Value objects e exceptions de domínio reutilizáveis
+- Infraestrutura comum (env, filters, types, interceptors)
+- **Nunca** lógica de negócio específica de um módulo

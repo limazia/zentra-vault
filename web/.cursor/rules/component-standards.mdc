@@ -1,0 +1,39 @@
+---
+description: Component architecture and TypeScript standards
+alwaysApply: true
+---
+
+# Component Standards
+
+Use the current project structure as source of truth:
+
+- `src/app`: app composition (router, providers, layout, stores)
+- `src/features`: feature-specific pages/components
+- `src/shared/components/ui`: reusable UI base (shadcn/radix)
+- `src/shared/components/states`: reusable app states (loading/error/missing params)
+- `src/shared/{hooks,http,lib,schemas,utils}`: shared logic and contracts
+
+Follow naming and code patterns:
+
+- File names in `kebab-case` (`app.layout.tsx`, `use-item.ts`, `*.schema.ts`)
+- Components in `PascalCase`, variables/functions in `camelCase`
+- Always type props, function params, and return values
+- Prefer `import type` for type-only imports
+
+Component and hook rules:
+
+- Reuse existing shared components before creating new ones
+- Keep business-specific UI inside the feature folder
+- Split large components into focused subcomponents/hooks
+- Custom hooks must start with `use*`
+- Validate external inputs (props, query params, handler params) with guard clauses/Zod
+
+Styling and imports:
+
+- Use Tailwind utility classes and `cn()` for class merging
+- Use `cva` for variant-heavy components
+- Import order: external packages -> `@/` aliases -> relative imports
+
+Reference docs:
+
+- `.cursor/docs/COMPONENT_GUIDELINES.md`

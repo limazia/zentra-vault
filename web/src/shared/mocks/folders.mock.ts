@@ -1,0 +1,58 @@
+import type { Folder } from "@/shared/types";
+
+export const mockFolders: Folder[] = [
+  {
+    id: "fld_01",
+    name: "Production API",
+    description: "Variáveis de ambiente para serviços de API de produção",
+    envCount: 4,
+    lastUpdatedAt: "2026-02-18T14:32:00Z",
+    createdBy: "Lucas Mazia",
+    createdAt: "2026-01-10T09:00:00Z",
+  },
+  {
+    id: "fld_02",
+    name: "Staging",
+    description: "Configuração do ambiente de staging",
+    envCount: 3,
+    lastUpdatedAt: "2026-02-17T10:15:00Z",
+    createdBy: "Ana Silva",
+    createdAt: "2026-01-15T11:30:00Z",
+  },
+  {
+    id: "fld_03",
+    name: "Development",
+    description: "Configurações de desenvolvimento local",
+    envCount: 2,
+    lastUpdatedAt: "2026-02-16T08:45:00Z",
+    createdBy: "Carlos Mendes",
+    createdAt: "2026-01-20T14:00:00Z",
+  },
+  {
+    id: "fld_04",
+    name: "CI/CD Pipeline",
+    description: "Secrets para workflows de integração contínua",
+    envCount: 5,
+    lastUpdatedAt: "2026-02-19T06:20:00Z",
+    createdBy: "Lucas Mazia",
+    createdAt: "2026-02-01T16:00:00Z",
+  },
+  {
+    id: "fld_05",
+    name: "Database Credentials",
+    description: "Strings de conexão e credenciais do banco de dados",
+    envCount: 2,
+    lastUpdatedAt: "2026-02-15T22:10:00Z",
+    createdBy: "Ana Silva",
+    createdAt: "2026-02-05T10:00:00Z",
+  },
+  {
+    id: "fld_06",
+    name: "Third-Party APIs",
+    description: "Chaves de API para integrações com serviços externos",
+    envCount: 6,
+    lastUpdatedAt: "2026-02-14T17:00:00Z",
+    createdBy: "Carlos Mendes",
+    createdAt: "2026-02-08T13:00:00Z",
+  },
+];
