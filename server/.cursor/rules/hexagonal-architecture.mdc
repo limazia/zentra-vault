@@ -1,0 +1,119 @@
+---
+description: Arquitetura hexagonal (Ports & Adapters) com NestJS
+alwaysApply: true
+---
+
+# Arquitetura Hexagonal
+
+## Estrutura de Pastas (kebab-case)
+
+```
+src/
+  modules/
+    <modulo>/
+      domain/
+        entities/
+        value-objects/
+        ports/
+          out/         # repositórios de agregados/entidades (contratos do domínio)
+        exceptions/
+      application/
+        ports/
+          out/         # serviços externos, tokens, messaging (contratos de orquestração)
+        use-cases/
+        mappers/
+      infrastructure/
+        adapters/
+          in/          # controllers, resolvers
+          out/         # repositórios, clientes HTTP, messaging
+        persistence/
+        <modulo>.module.ts
+  shared/
+    domain/
+      value-objects/
+      exceptions/
+    infrastructure/
+```
+
+## Ports Out (Classes Abstratas)
+
+Ports são sempre **classes abstratas**, nunca interfaces TypeScript. Ports existem apenas no lado **out**.
+
+### Onde colocar cada port?
+
+- **`domain/ports/out`**: contratos que o domínio precisa para expressar regras de negócio (ex: repositórios de agregados/entidades).
+- **`application/ports/out`**: contratos que use cases precisam para orquestração (ex: serviços externos, tokens, messaging, APIs de terceiros).
+
+```typescript
+// ✅ Port em domain (repositório de entidade)
+export abstract class UserRepositoryPort {
+  abstract save(user: User): Promise<void>;
+  abstract findById(id: UserId): Promise<User | null>;
+}
+
+// ✅ Port em application (serviço externo)
+export abstract class GitHubAuthPort {
+  abstract exchangeCodeForToken(code: string): Promise<string>;
+  abstract getUser(accessToken: string): Promise<GitHubUserInfo>;
+}
+```
+
+## Use Cases
+
+Cada use case é uma classe com um único método `execute()` e recebe Ports Out via injeção de dependência do NestJS. Controllers chamam use cases diretamente.
+
+```typescript
+@Injectable()
+export class CreateUserUseCase {
+  constructor(private readonly userRepository: UserRepositoryPort) {}
+
+  async execute(command: CreateUserCommand): Promise<User> {
+    // lógica de orquestração
+  }
+}
+```
+
+## Adapters (Infrastructure)
+
+Adapters ficam em `infrastructure/adapters/` e se dividem em dois lados:
+
+- **`in/`** (driving/primary): recebem estímulos externos e **dirigem** a aplicação — controllers, resolvers, event listeners, CLI handlers. Chamam use cases diretamente.
+- **`out/`** (driven/secondary): são **acionados** pela aplicação para se comunicar com o mundo externo — implementam Ports Out (repositórios, clientes HTTP, messaging, provedores de token).
+
+```typescript
+// ✅ Adapter In (controller chama use case)
+@Controller('users')
+export class UserController {
+  constructor(private readonly createUser: CreateUserUseCase) {}
+}
+
+// ✅ Adapter Out (implementa port out)
+@Injectable()
+export class UserPrismaRepository implements UserRepositoryPort {
+  async save(user: User): Promise<void> { /* ... */ }
+}
+```
+
+## Regras de Dependência
+
+- **Domain** não importa de Application nem Infrastructure
+- **Application** importa de Domain, nunca de Infrastructure
+- **Infrastructure** importa de Domain e Application
+- Adapters Out implementam Ports Out (de domain ou application)
+- Use Cases dependem de Ports Out (de domain e/ou application)
+- Controllers injetam Use Cases diretamente
+
+## NestJS Module Wiring
+
+No module, vincular ports out às implementações concretas e registrar use cases:
+
+```typescript
+@Module({
+  providers: [
+    { provide: UserRepositoryPort, useClass: UserPrismaRepository },
+    CreateUserUseCase,
+  ],
+  controllers: [UserController],
+})
+export class UserModule {}
+```

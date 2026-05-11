@@ -1,0 +1,33 @@
+---
+description: Mandatory microfrontend setup, validation, and tracking rules
+alwaysApply: true
+---
+
+# Critical Development Rules
+
+Apply these rules in every implementation and refactor.
+
+## Root Mounting (mandatory)
+
+- Never keep a generic root id like `microfrontend-root` for new resources
+- Use `<div id="{resource-name}-root"></div>` in `index.html`
+- Keep `document.getElementById("{resource-name}-root")` in `src/main.tsx` aligned
+- Treat id mismatch between `index.html` and `main.tsx` as blocking issue
+
+## Parameter Validation (mandatory)
+
+- Never trust optional inputs from props, URL/query, events, or API payloads
+- Add guard clauses/early returns before using values
+- Use Zod schema validation for external/untrusted data whenever possible
+- Document expected invalid states in UI flow (missing params, session error, etc.)
+
+## PostHog Tracking (mandatory for relevant interactions)
+
+- Track user-relevant interactions with `posthog.capture(...)`
+- Use event naming: `[resource]_[action]_[context]`
+- Add tracking in pages/components where interaction happens
+- Never track sensitive data (PII, auth tokens, raw sensitive payloads)
+
+Reference docs:
+
+- `.cursor/docs/DEVELOPMENT_RULES.md`

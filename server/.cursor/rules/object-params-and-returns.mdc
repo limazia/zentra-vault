@@ -1,0 +1,52 @@
+---
+description: Parâmetros e retornos de funções/métodos devem ser objetos tipados
+alwaysApply: true
+---
+
+# Parâmetros e Retornos como Objetos
+
+Todas as funções e métodos de classes devem receber parâmetros e retornar valores por meio de objetos tipados. Isso garante extensibilidade, legibilidade e facilita refatorações.
+
+## Parâmetros
+
+Usar um objeto tipado como único parâmetro. Definir o tipo inline ou como `type`/`interface` nomeado.
+
+```typescript
+// ❌ Parâmetros posicionais
+async execute(name: string, email: string, role: string): Promise<User> { ... }
+
+// ✅ Objeto tipado
+type CreateUserCommand = {
+  name: string;
+  email: string;
+  role: string;
+};
+
+async execute(command: CreateUserCommand): Promise<User> { ... }
+```
+
+## Retornos
+
+Retornar objetos tipados em vez de primitivos soltos ou tuplas.
+
+```typescript
+// ❌ Retorno primitivo
+async execute(query: FindUserQuery): Promise<string> { ... }
+
+// ✅ Objeto tipado
+type FindUserResult = {
+  id: string;
+  name: string;
+};
+
+async execute(query: FindUserQuery): Promise<FindUserResult> { ... }
+```
+
+## Exceções
+
+As seguintes situações **não** precisam seguir essa regra:
+
+- **Métodos com zero parâmetros**: não há o que embrulhar
+- **Métodos com um único parâmetro primitivo semântico** (ex: `findById(id: UserId)`): já são claros e coesos
+- **Value Objects** (`create`, `equals`): seguem convenção própria da camada de domínio
+- **Retornos `void`** ou entidades de domínio diretas: já são tipos expressivos

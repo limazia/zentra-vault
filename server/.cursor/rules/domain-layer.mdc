@@ -1,0 +1,105 @@
+---
+description: Regras da camada de domínio - Entidades, Value Objects, Exceptions
+globs: "**/domain/**/*.ts"
+alwaysApply: false
+---
+
+# Camada de Domínio
+
+## Entidades
+
+- Possuem identidade (Id como Value Object)
+- Rich Domain Model: lógica de negócio dentro da entidade, não em services
+- Proteger invariantes no construtor e métodos
+- Factory method estático `create()` que lança Domain Exception se inválido
+
+```typescript
+export class User {
+  private constructor(
+    private readonly id: UserId,
+    private name: UserName,
+    private email: Email,
+  ) {}
+
+  static create(props: CreateUserProps): User {
+    const name = UserName.create(props.name);
+    const email = Email.create(props.email);
+    return new User(UserId.generate(), name, email);
+  }
+
+  changeName(newName: UserName): void {
+    this.name = newName;
+  }
+}
+```
+
+## Value Objects
+
+- **Imutáveis**: todas as propriedades `readonly`, sem setters
+- Validação no factory method `create()` que lança Domain Exception se inválido
+- Implementar `equals()` para comparação por valor
+- Sem identidade própria
+
+```typescript
+export class Email {
+  private constructor(readonly value: string) {}
+
+  static create(value: string): Email {
+    if (!value || !Email.isValid(value)) {
+      throw new InvalidEmailException(value);
+    }
+    return new Email(value);
+  }
+
+  private static isValid(email: string): boolean {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
+
+  equals(other: Email): boolean {
+    return this.value === other.value;
+  }
+}
+```
+
+## Domain Exceptions
+
+Criar exceções específicas do domínio que estendem uma `DomainException` base. Lançá-las para qualquer violação de regra de negócio. Tratar na camada de Infrastructure com NestJS Exception Filters.
+
+```typescript
+export abstract class DomainException extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = this.constructor.name;
+  }
+}
+
+export class InvalidEmailException extends DomainException {
+  constructor(email: string) {
+    super(`Email inválido: ${email}`);
+  }
+}
+```
+
+## Exception Filter (Infrastructure)
+
+Converter Domain Exceptions em respostas HTTP com um filter global:
+
+```typescript
+@Catch(DomainException)
+export class DomainExceptionFilter implements ExceptionFilter {
+  catch(exception: DomainException, host: ArgumentsHost) {
+    const response = host.switchToHttp().getResponse();
+    response.status(400).json({
+      error: exception.name,
+      message: exception.message,
+    });
+  }
+}
+```
+
+## Mappers
+
+Nunca expor entidades de domínio em respostas HTTP. Usar Mappers em Application para converter:
+- **Command/Query → Domain**: entrada
+- **Domain → Response DTO**: saída
+- **ORM Entity ↔ Domain Entity**: persistência

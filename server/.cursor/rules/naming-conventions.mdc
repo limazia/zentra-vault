@@ -1,0 +1,49 @@
+---
+description: Convenções de nomenclatura - kebab-case para pastas e arquivos
+alwaysApply: true
+---
+
+# Convenções de Nomenclatura
+
+## Pastas e Arquivos: kebab-case
+
+Todas as pastas e arquivos usam **kebab-case** (tudo minúsculo separado por hífen).
+
+```
+✅ Correto
+src/modules/user/domain/entities/user.ts
+src/modules/user/domain/value-objects/email.ts
+src/modules/user/application/use-cases/create-user.use-case.ts
+src/modules/user/infrastructure/adapters/out/user-prisma.repository.ts
+
+❌ Errado
+src/Modules/User/Domain/Entities/User.ts
+src/modules/user/domain/valueObjects/Email.ts
+```
+
+## Sufixos de Arquivo
+
+Usar ponto para separar o tipo do artefato:
+
+| Artefato         | Padrão                            | Exemplo                          |
+|------------------|-----------------------------------|----------------------------------|
+| Entidade         | `<nome>.ts`                       | `user.ts`                        |
+| Value Object     | `<nome>.ts`                       | `email.ts`                       |
+| Port Out         | `<nome>.port.ts`                  | `user-repository.port.ts`        |
+| Use Case         | `<nome>.use-case.ts`              | `create-user.use-case.ts`        |
+| Controller       | `<nome>.controller.ts`            | `user.controller.ts`             |
+| Repository Impl  | `<nome>.repository.ts`            | `user-prisma.repository.ts`      |
+| Mapper           | `<nome>.mapper.ts`                | `user.mapper.ts`                 |
+| Module           | `<nome>.module.ts`                | `user.module.ts`                 |
+| Domain Exception | `<nome>.exception.ts`             | `user-not-found.exception.ts`    |
+| DTO              | `<nome>.dto.ts`                   | `create-user.dto.ts`             |
+| Spec/Test        | `<nome>.spec.ts`                  | `create-user.use-case.spec.ts`   |
+
+## Classes
+
+- Classes sempre em **PascalCase**: `CreateUserUseCase`, `UserRepositoryPort`
+- Uma classe exportada por arquivo (co-locação de tipos auxiliares é ok)
+
+## Variáveis e Funções
+
+- **camelCase** para variáveis, parâmetros e métodos
